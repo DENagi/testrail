@@ -1,5 +1,5 @@
 {
-  "name": "codeception/testrail",
+  "name": "bagalore/testrail",
   "description": "Extension for TestRail integration",
   "type": "library",
   "authors": [
