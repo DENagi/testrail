@@ -4,12 +4,8 @@
   "type": "library",
   "authors": [
     {
-      "name": "Mihail Chubar",
-      "email": "rasstroen@wisebits.com"
-    },
-    {
-      "name": "Stanislav Pavlovichev",
-      "email": "spavlovichev@gmail.com"
+      "name": "Nagarjun Bagalore",
+      "email": "nagarjun.bagalore@check24.de"
     }
   ],
   "autoload": {
@@ -21,6 +17,7 @@
   "require": {
     "php": ">=7.1",
     "guzzlehttp/guzzle": "~6.0",
-    "codeception/codeception": ">=2.3 <5.0"
+    "codeception/codeception": ">=2.3 <5.0",
+    "ext-json": "*"
   }
 }

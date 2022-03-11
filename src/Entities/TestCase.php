@@ -69,11 +69,6 @@ class TestCase
     private $suiteId;
 
     /**
-     * @var string|null
-     */
-    private $customFilePath;
-
-    /**
      * TestCase constructor.
      * @param int $id
      * @param string $title
@@ -87,7 +82,6 @@ class TestCase
      * @param string|null $estimate
      * @param string|null $estimateForecast
      * @param int|null $suiteId
-     * @param string|null $customFilePath
      */
     public function __construct(
         int $id,
@@ -102,7 +96,6 @@ class TestCase
         ?string $estimate,
         ?string $estimateForecast,
         ?int $suiteId,
-        ?string $customFilePath
     ) {
         $this->id = $id;
         $this->title = $title;
@@ -116,7 +109,6 @@ class TestCase
         $this->estimate = $estimate;
         $this->estimateForecast = $estimateForecast;
         $this->suiteId = $suiteId;
-        $this->customFilePath = $customFilePath;
     }
 
     /**
@@ -215,11 +207,4 @@ class TestCase
         return $this->suiteId;
     }
 
-    /**
-     * @return string|null
-     */
-    public function getCustomFilePath(): ?string
-    {
-        return $this->customFilePath;
-    }
 }

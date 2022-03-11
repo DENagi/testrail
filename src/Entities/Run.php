@@ -88,15 +88,6 @@ class Run
      */
     private $planId;
 
-    /**
-     * @var int|null
-     */
-    private $entryIndex;
-
-    /**
-     * @var string|null
-     */
-    private $entryId;
 
     /**
      * @var int|null
@@ -131,8 +122,6 @@ class Run
      * @param int|null $failedCount
      * @param int|null $projectId
      * @param int|null $planId
-     * @param int|null $entryIndex
-     * @param string|null $entryId
      * @param int|null $createdOn
      * @param int|null $createdBy
      * @param string $url
@@ -154,8 +143,6 @@ class Run
         ?int $failedCount,
         ?int $projectId,
         ?int $planId,
-        ?int $entryIndex,
-        ?string $entryId,
         ?int $createdOn,
         ?int $createdBy,
         string $url
@@ -176,8 +163,6 @@ class Run
         $this->failedCount = $failedCount;
         $this->projectId = $projectId;
         $this->planId = $planId;
-        $this->entryIndex = $entryIndex;
-        $this->entryId = $entryId;
         $this->createdOn = $createdOn;
         $this->createdBy = $createdBy;
         $this->url = $url;
@@ -309,22 +294,6 @@ class Run
     public function getPlanId(): ?int
     {
         return $this->planId;
-    }
-
-    /**
-     * @return int|null
-     */
-    public function getEntryIndex(): ?int
-    {
-        return $this->entryIndex;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getEntryId(): ?string
-    {
-        return $this->entryId;
     }
 
     /**
