@@ -6,8 +6,6 @@ use Codeception\Event\FailEvent;
 use Codeception\Event\TestEvent;
 use Codeception\Events;
 use Codeception\Extension;
-use Codeception\TestRail\Entities\Milestone;
-use Codeception\TestRail\Entities\Plan;
 use Codeception\TestRail\Entities\Run;
 use Codeception\TestRail\Entities\Suite;
 use Codeception\TestRail\Entities\TestCase;
@@ -67,18 +65,6 @@ class TestRailIntegrationExtension extends Extension
     private $currentSuite;
 
     /**
-     * Current milestone from testRails API
-     * @var Milestone
-     */
-    private $currentMilestone;
-
-    /**
-     * Current plan from testRails API
-     * @var Plan
-     */
-    private $currentPlan;
-
-    /**
      * Current run
      * @var Run
      */
@@ -90,17 +76,6 @@ class TestRailIntegrationExtension extends Extension
      */
     private $currentCase;
 
-    /**
-     * Cached content of test files (to parse them)
-     * @var string[]
-     */
-    private $filesContent = [];
-
-    /**
-     * Cached count of each test run count (to detect dataProviders)
-     * @var int[]
-     */
-    private $testRunsCount = [];
 
     /**
      * @param Api $api
@@ -197,6 +172,7 @@ class TestRailIntegrationExtension extends Extension
     }
 
     /**
+     * This ensures if a test case for each Automated test is present in the Test rail, if not present the test will not execute
      * @param TestEvent $e
      * @return void
      */
@@ -211,6 +187,7 @@ class TestRailIntegrationExtension extends Extension
 
 
     /**
+     * This function ensures if the test Run exists at the beginning, if not a new Test Run is created for the Suite
      * @param TestEvent $e
      * @return void
      */
@@ -238,6 +215,7 @@ class TestRailIntegrationExtension extends Extension
     }
 
     /**
+     * Closes test run when all the test cases are executed
      * @param TestEvent $e
      */
     private function close_run(TestEvent $e)
@@ -263,6 +241,7 @@ class TestRailIntegrationExtension extends Extension
     }
 
     /**
+     * Add Test results to test run
      * @param int $runId
      * @param int $caseId
      * @param bool $passed
@@ -299,6 +278,7 @@ class TestRailIntegrationExtension extends Extension
     }
 
     /**
+     * Fetch Suite ID from the project
      * @param TestEvent $e
      * @return Suite
      */
@@ -310,6 +290,7 @@ class TestRailIntegrationExtension extends Extension
     }
 
     /**
+     * Fetch Test Case ID from the Suite
      * @param TestEvent $e
      * @return TestCase
      */
