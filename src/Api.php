@@ -90,6 +90,42 @@ class Api
 
     /**
      * @param int $suiteId
+     * @return array
+     */
+    public function getCases(int $suiteId): array
+    {
+        $data = $this->getResponse(
+            '/api/v2/get_cases/' .  $this->projectId,
+            'get',
+            [
+                'suite_id' => $suiteId
+            ]
+        );
+
+        $cases = [];
+
+        foreach ($data as $case){
+            $cases[$case['id']] = new TestCase(
+                $case['id'],
+                $case['title'],
+                $case['section_id'],
+                $case['template_id'],
+                $case['type_id'],
+                $case['priority_id'],
+                $case['milestone_id'],
+                $case['created_by'],
+                $case['created_on'],
+                $case['estimate'],
+                $case['estimate_forecast'],
+                $case['suite_id']
+            );
+        }
+
+        return $cases;
+    }
+
+    /**
+     * @param int $suiteId
      * @param string $name
      * @param string $description
      * @return Run
@@ -137,7 +173,7 @@ class Api
     {
 
         $data = $this->getResponse(
-            '/api/v2/get_runs/' .  $this->projectId,
+            '/api/v2/get_runs/' .  $this->projectId . '&is_completed=0',
             'get'
         );
 
@@ -565,13 +601,14 @@ class Api
         $uri = $this->apiUrl . $path;
         $params['project_id'] = $this->projectId;
         $parameters['headers']['Content-Type'] = 'application/json';
-        $parameters['auth'] = [$this->username, $this->password];
+        $parameters['auth'] = $this->username;
+        $parameters['auth'] = $this->password;
+
 
         switch ($method) {
             case 'get':
                 $uri .= '&' . http_build_query($params);
                 $response = $this->httpClient->get($uri, $parameters);
-
                 break;
             case 'post':
                 $parameters['json'] = $params;

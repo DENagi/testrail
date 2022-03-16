@@ -3,19 +3,15 @@
 namespace Codeception\TestRail;
 
 use Codeception\Event\FailEvent;
-use Codeception\Event\SuiteEvent;
 use Codeception\Event\TestEvent;
 use Codeception\Events;
 use Codeception\Extension;
 use Codeception\TestRail\Entities\Milestone;
 use Codeception\TestRail\Entities\Plan;
 use Codeception\TestRail\Entities\Run;
-use Codeception\TestRail\Entities\Section;
 use Codeception\TestRail\Entities\Suite;
 use Codeception\TestRail\Entities\TestCase;
 use GuzzleHttp\Client;
-use function PHPUnit\Framework\assertInstanceOf;
-use function PHPUnit\Framework\assertTrue;
 
 /**
  * Class TestRailIntegrationExtension
@@ -24,31 +20,6 @@ use function PHPUnit\Framework\assertTrue;
  */
 class TestRailIntegrationExtension extends Extension
 {
-    /**
-     * @const string
-     */
-    private const MILESTONE_PREFIX = '[Auto] ';
-
-    /**
-     * @const string
-     */
-    private const PLAN_PREFIX = '[Auto] Regression Plan ';
-
-    /**
-     * @const string
-     */
-    private const RUN_PREFIX = 'Run suite ';
-
-    /**
-     * @const string
-     */
-    private const MILESTONE_DESCRIPTION = 'Created automatically by extension';
-
-    /**
-     * @const string
-     */
-    private const PLAN_DESCRIPTION_PREFIX = 'Automatically created ';
-
     /**
      * @const int
      */
@@ -64,12 +35,10 @@ class TestRailIntegrationExtension extends Extension
      * @var string[]
      */
     public static $events = [
-        Events::SUITE_BEFORE => 'beforeSuite',
         Events::TEST_BEFORE => 'beforeTest',
         Events::TEST_FAIL => 'testFailed',
         Events::TEST_ERROR => 'testFailed',
-        Events::TEST_SUCCESS => 'testPassed',
-        Events::TEST_END => 'afterTest'
+        Events::TEST_SUCCESS => 'testPassed'
     ];
 
     /**
@@ -179,18 +148,6 @@ class TestRailIntegrationExtension extends Extension
 
 
     /**
-     * Before suit event - prepare all needed entities
-     *
-     * @param SuiteEvent $e
-     */
-    public function beforeSuite(SuiteEvent $e): void
-    {
-        if (!$this->isExtensionNeeded()) {
-            return;
-        }
-    }
-
-    /**
      * @param TestEvent $e
      */
     public function beforeTest(TestEvent $e): void
@@ -201,18 +158,6 @@ class TestRailIntegrationExtension extends Extension
         $this->ensureTestCaseExists($e);
     }
 
-    /**
-     * @param TestEvent $e
-     */
-    public function afterTest(TestEvent $e): void
-    {
-//        if (!$this->isExtensionNeeded()) {
-//            return;
-//        }
-//
-//        $runID = $this->createRun($e)->getId();
-//        $this->api->closeRun($runID);
-    }
 
     /**
      * @param FailEvent $e
@@ -227,11 +172,11 @@ class TestRailIntegrationExtension extends Extension
         $message .= "\n" . $e->getFail()->getFile() . ': ' . $e->getFail()->getLine();
         $message .= "\n" . substr($e->getFail()->getTraceAsString(), 0, 512);
 
-//        $results = $this->currentRun->getId();
-//        $caseId = $this->currentCase->getId();
-
-//        $this->ensureTestCaseExists($e);
-//        $this->setTestResult($results, $caseId, false, $e->getTime(), $message);
+        $this->ensureTestRunExists($e);
+        $results = $this->currentRun->getId();
+        $caseId = $this->getCaseID($e)->getId();
+        $this->setTestResult($results, $caseId, false, $e->getTime(), $message);
+        $this->close_run($e);
     }
 
 
@@ -244,15 +189,11 @@ class TestRailIntegrationExtension extends Extension
             return;
         }
 
-
-        if (in_array($this->getSuiteID($e)->getName(), $this->ensureTestRunExists($e)) == false){
-            var_dump($this->ensureTestRunExists($e));
-//            $this->currentRun = $this->createRun($e);
-        }
-
-//        $results = $this->currentRun->getId();
-//        $caseId = $this->getCaseID($e)->getId();
-//        $this->setTestResult($results, $caseId, true, $e->getTime(), '');
+        $this->ensureTestRunExists($e);
+        $results = $this->currentRun->getId();
+        $caseId = $this->getCaseID($e)->getId();
+        $this->setTestResult($results, $caseId, true, $e->getTime(), '');
+        $this->close_run($e);
     }
 
     /**
@@ -271,51 +212,55 @@ class TestRailIntegrationExtension extends Extension
 
     /**
      * @param TestEvent $e
-     * @return array
+     * @return void
      */
-    private function ensureTestRunExists(TestEvent $e): array
+    private function ensureTestRunExists(TestEvent $e): void
     {
+        $suiteName = $this->getSuiteID($e)->getName();
+
         $runs = $this->api->getRuns();
 
-        if (in_array($this->getSuiteID($e)->getName(), array_keys($runs)) == false){
+        /*
+         * Checks if a run exists, if not it creates for the first time
+         */
+        if ((in_array($suiteName, array_keys($runs)) == false)){
             $this->currentRun = $this->createRun($e);
         }
 
-        foreach ($runs as $run){
-            $name = $run->getName();
-            $is_completed = $run->isCompleted();
+        var_dump($this->currentRun);
 
-            if($name == $this->getSuiteID($e)->getName() && $is_completed == false){
-                continue;
-            }
-            elseif($name == $this->getSuiteID($e)->getName() && $is_completed == true){
-                unset($runs[$name]);
-            }
+        /*
+         * Check if run exists and if the run is not completed
+         */
+        if ((in_array($suiteName, array_keys($runs)) == true) && ($runs[$suiteName]->isCompleted() == false)){
+            return;
         }
-        return array_keys($runs);
     }
 
-//    /**
-//     * @param string $fileName
-//     * @param TestEvent $e
-//     * @return string
-//     */
-//    private function getRelativeFileName(string $fileName, TestEvent $e): string
-//    {
-//        $folders = explode('/', $fileName);
-//
-//        $resultPath = [];
-//
-//        foreach ($folders as $folder) {
-//            $resultPath[] = $folder;
-//
-//            if (ucfirst($folder) === $this->getSuiteID($e)->getName()) {
-//                $resultPath = [];
-//            }
-//        }
-//
-//        return DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $resultPath);
-//    }
+    /**
+     * @param TestEvent $e
+     */
+    private function close_run(TestEvent $e)
+    {
+        $suiteName = $this->getSuiteID($e)->getName();
+        $suiteId = $this->getSuiteID($e)->getId();
+
+        // Fetch all the runs from the project excluding the closed runs
+        $runs = $this->api->getRuns();
+
+        // Fetch all the test cases from the provided suite
+        $cases = $this->api->getCases($suiteId);
+
+        $total = ($runs[$suiteName]->getPassedCount()) + ($runs[$suiteName]->getFailedCount());
+
+        if ($runs[$suiteName]->getPassedCount() == count($cases) ||
+            $runs[$suiteName]->getFailedCount() == count($cases) ||
+            $total == count($cases))
+        {
+            $runID = $this->currentRun->getId();
+            $this->api->closeRun($runID);
+        }
+    }
 
     /**
      * @param int $runId
@@ -353,67 +298,6 @@ class TestRailIntegrationExtension extends Extension
         return "{$hours}h {$minutes}m {$seconds}s";
     }
 
-//    /**
-//     * @param TestEvent $e
-//     * @return string
-//     */
-//    private function getFullTestName(TestEvent $e): string
-//    {
-//        $testName = $e->getTest()->getMetadata()->getName();
-//
-//        $fileName = $e->getTest()->getMetadata()->getFilename();
-//
-//        $this->testRunsCount[$fileName][$testName] = $this->testRunsCount[$fileName][$testName] ?? 0;
-//        $this->testRunsCount[$fileName][$testName]++;
-//
-//        if (!isset($this->filesContent[$fileName])) {
-//            if (is_readable($e->getTest()->getMetadata()->getFilename())) {
-//                $file = file($e->getTest()->getMetadata()->getFilename());
-//                $this->filesContent[$fileName] = $file;
-//            } else {
-//                $this->filesContent[$fileName] = [];
-//            }
-//        }
-//
-//        $bracketsCount = 0;
-//        $functionFound = false;
-//        $functionStarted = false;
-//        $testDescription = '';
-//
-//        // trying to find $->wantTo or $I->wantToTest to get test description
-//        foreach ($this->filesContent[$fileName] as $item) {
-//            if (strpos($item, 'function ' . $testName) !== false) {
-//                $functionFound = true;
-//            }
-//
-//            if ($functionStarted && strpos($item, '{') !== false) {
-//                $bracketsCount++;
-//            }
-//
-//            if ($functionFound && strpos($item, '{') !== false) {
-//                $functionStarted = true;
-//            }
-//
-//            if ($functionStarted && strpos($item, '}') !== false) {
-//                $bracketsCount--;
-//            }
-//
-//            if ($functionStarted && $bracketsCount === -1) {
-//                // function ends
-//                break;
-//            }
-//
-//            if ($functionStarted && strpos($item, '->wantTo') !== false) {
-//                preg_match('/->wantTo(Test|)\((\"|\')(.*)(\"|\')\)/isU', $item, $matches);
-//                $testDescription = $matches[3] ?? '';
-//            }
-//        }
-//        $title = $testDescription ? ($testName . ': ' . $testDescription) : $testName;
-//        $title .= ' #' . $this->testRunsCount[$fileName][$testName];
-//
-//        return $title;
-//    }
-
     /**
      * @param TestEvent $e
      * @return Suite
@@ -436,12 +320,9 @@ class TestRailIntegrationExtension extends Extension
         return $this->currentCase;
     }
 
-    private function getRun(TestEvent $e): array
-    {
-        return $this->api->getRun(84971);
-    }
 
     /**
+     * Create "run" in testRails for current suit
      * @param TestEvent $e
      * @return Run
      */
@@ -452,174 +333,4 @@ class TestRailIntegrationExtension extends Extension
         return $this->api->addRun($suiteId, $testName, '');
     }
 
-    /**
-     * Create new case
-     * @param int $suitId
-     * @param string $testName
-     * @param string $filename
-     * @return TestCase
-     */
-    private function createCase(int $suitId, string $testName, string $filename): TestCase
-    {
-
-//        $folders = explode('/', $filename);
-//        $resultPath = [];
-//
-//        foreach ($folders as $folder) {
-//            $resultPath[] = $folder;
-//
-//            if (ucfirst($folder) === $this->currentSuite->getName()) {
-//                $resultPath = [];
-//            }
-//        }
-//
-//        $sections = $this->api->getSections($suitId);
-//
-//        /** @var Section[] $sectionsByDescription */
-//        $sectionsByDescription = [];
-//
-//        foreach ($sections as $section) {
-//            $sectionsByDescription[$section->getDescription()] = $section;
-//        }
-//
-//        $pathsMapped = [];
-//
-//        $pathToFolder = '';
-//
-//        foreach ($resultPath as $index => $folder) {
-//            $folderFound = false;
-//            $pathToFolder = '';
-//
-//            foreach ($resultPath as $folderName) {
-//                if (!$folderFound) {
-//                    $pathToFolder .= '/' . $folderName;
-//                }
-//
-//                if ($folder === $folderName) {
-//                    $folderFound = true;
-//                }
-//            }
-//
-//            $pathsMapped[$folder] = $pathToFolder;
-//
-//            $previousSectionId = 0;
-//
-//            if (!isset($sectionsByDescription[$pathToFolder])) {
-//                if ($index) {
-//                    $previousPath = $pathsMapped[$resultPath[$index - 1]];
-//                    $previousSectionId = $sectionsByDescription[$previousPath]->getId() ?? 0;
-//                }
-//                $sectionsByDescription[$pathToFolder] = $this->api->createSection(
-//                    $suitId,
-//                    $folder,
-//                    $pathToFolder,
-//                    $index ? $previousSectionId : 0
-//                );
-//            }
-//        }
-//
-//        $sectionId = $sectionsByDescription[$pathToFolder]->getId();
-//
-//        return $this->api->addCase($sectionId, $testName, $pathToFolder);
-    }
-
-//    /**
-//     * Check if plan created and create if not
-//     * Sets $this->>currentPlan for suite
-//     * @param SuiteEvent $e
-//     * @return void
-//     */
-//    private function initializeCurrentPlan(SuiteEvent $e): void
-//    {
-//        $plans = $this->api->getPlans();
-//
-//        $currentPlanNamePrefix = self::PLAN_PREFIX . '[' . $e->getSuite()->getBaseName() . '] ' . $this->version;
-//
-//        $maxPostfix = 0;
-//
-//        foreach ($plans as $plan) {
-//            if (strpos($plan->getName(), $currentPlanNamePrefix) === 0) {
-//                $postfix = explode('#', $plan->getName());
-//                $postfix = array_pop($postfix);
-//                $maxPostfix = max($postfix, $maxPostfix);
-//            }
-//        }
-//        $maxPostfix++;
-//
-//        $planName = $currentPlanNamePrefix . ', run #' . $maxPostfix;
-//
-//        $this->currentPlan = $this->api->addPlan(
-//            $planName,
-//            self::PLAN_DESCRIPTION_PREFIX . date('Y-m-d H:i:s'),
-//            $this->currentMilestone->getId()
-//        );
-//    }
-//
-//    /**
-//     * Check if suite created and create if not
-//     * Sets $this->>currentSuite and empty $this->currentSuiteExistingCases for current suite
-//     * Empty files content
-//     * @param SuiteEvent $e
-//     * @return void
-//     */
-//    private function initializeCurrentSuite(SuiteEvent $e): void
-//    {
-//        $suites = $this->api->getSuites();
-//
-//        foreach ($suites as $suite) {
-//            if ($suite->getName() === ucfirst($e->getSuite()->getBaseName())) {
-//                $this->currentSuite = $suite;
-//            }
-//        }
-//
-//        if (!$this->currentSuite) {
-//            $this->currentSuite = $this->api->addSuite(
-//                ucfirst($e->getSuite()->getBaseName()),
-//                ucfirst($e->getSuite()->getBaseName())
-//            );
-//        }
-//
-//        $this->currentSuiteExistingCases = [];
-//        $this->filesContent = [];
-//    }
-//
-    /**
-     * Create "run" in testRails for current suit
-     */
-    private function initializeCurrentRun(): void
-    {
-//        $this->api->addRun($this->currentRun->getId(), )
-//        $this->currentRun = $this->api->addPlanEntry(
-//            self::RUN_PREFIX . $this->currentSuite->getName(),
-//            '',
-//            $this->currentMilestone->getId(),
-//            $this->currentSuite->getId(),
-//            $this->currentPlan->getId()
-//        );
-    }
-//
-//    /**
-//     * Check if milestone created and create if not
-//     * Sets $this->>currentMilestone for suite
-//     * @return void
-//     */
-//    private function initializeCurrentMilestone(): void
-//    {
-//        if (!$this->currentMilestone) {
-//            $milestones = $this->api->getMilestones();
-//
-//            $currentMilestoneName = self::MILESTONE_PREFIX . $this->version;
-//
-//            foreach ($milestones as $milestone) {
-//                if ($milestone->getName() === $currentMilestoneName) {
-//                    $this->currentMilestone = $milestone;
-//                }
-//            }
-//
-//            if (!$this->currentMilestone) {
-//                $milestone = $this->api->addMilestone($currentMilestoneName, self::MILESTONE_DESCRIPTION);
-//                $this->currentMilestone = $milestone;
-//            }
-//        }
-//    }
 }
