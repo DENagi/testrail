@@ -204,7 +204,6 @@ class TestRailIntegrationExtension extends Extension
             $this->currentRun = $this->createRun($e);
         }
 
-        var_dump($this->currentRun);
 
         /*
          * Check if run exists and if the run is not completed
