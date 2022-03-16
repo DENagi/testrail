@@ -3,7 +3,7 @@
 The extension allows to integrate your test with TestRail. First run will create test suites and test cases.
 
 # Features
- * Provided the ablility to add '''testSuiteId''' and '''testCaseId''' as an annotation in each tests
+ * Provided the ablility to add ```testSuiteId``` and ```testCaseId``` as an annotation in each tests
  * Only the test having the annotation will be fetched from testrail
  * Automatically creates test run with the same name as your Suite and add the test case to testruns
  * Pushes test results
@@ -27,14 +27,15 @@ extensions:
 
 ```
 
-#TestCase:
-'''
+# TestCase:
+```
 /**
-* @testSuiteId SuiteId (excluding 'S' prefix) eg: 1234
-* @testCaseId TestCaseId (excluding 'C' prefix) eg: 1234
+* @testSuiteId SuiteId eg: 1234
+* @testCaseId TestCaseId  eg: 1234
 */
 public function foo()
-'''
+
+```
 
 # Run
 ```bash
