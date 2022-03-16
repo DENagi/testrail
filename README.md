@@ -1,6 +1,6 @@
 # Codeception TestRail Integration
 
-The extension allows to integrate your test with TestRail. First run will create test suites and test cases.
+The extension allows to integrate your test with TestRail.
 
 # Features
  * Provided the ablility to add ```testSuiteId``` and ```testCaseId``` as an annotation in each tests
