@@ -265,7 +265,6 @@ class Api
         );
     }
 
-
     /**
      * @param int $suiteId
      * @return Suite
@@ -297,9 +296,7 @@ class Api
         $uri = $this->apiUrl . $path;
         $params['project_id'] = $this->projectId;
         $parameters['headers']['Content-Type'] = 'application/json';
-        $parameters['auth'] = $this->username;
-        $parameters['auth'] = $this->password;
-
+        $parameters['auth'] = [$this->username, $this->password];
 
         switch ($method) {
             case 'get':
@@ -309,7 +306,6 @@ class Api
             case 'post':
                 $parameters['json'] = $params;
                 $response = $this->httpClient->post($uri, $parameters);
-
                 break;
             default:
                 throw new InvalidArgumentException(sprintf('%s method isn\'t supported', $method));

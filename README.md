@@ -12,6 +12,8 @@ The extension allows to integrate your test with TestRail.
 
 
 # Configuration:
+ * Password even accepts API Key, to set API key -> Go to My Settings -> API Keys -> Add Keys -> Enter a name -> Generate Key
+ * Add the generated API key in the password field as data type string 
 ```yml
 
 extensions:
