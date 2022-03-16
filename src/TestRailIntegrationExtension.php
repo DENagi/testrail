@@ -123,6 +123,7 @@ class TestRailIntegrationExtension extends Extension
 
 
     /**
+     * Ensure if the testcase exist
      * @param TestEvent $e
      */
     public function beforeTest(TestEvent $e): void
@@ -203,7 +204,6 @@ class TestRailIntegrationExtension extends Extension
         if ((in_array($suiteName, array_keys($runs)) == false)){
             $this->currentRun = $this->createRun($e);
         }
-
 
         /*
          * Check if run exists and if the run is not completed

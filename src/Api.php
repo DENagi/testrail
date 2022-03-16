@@ -2,7 +2,6 @@
 
 namespace Codeception\TestRail;
 
-
 use Codeception\TestRail\Entities\Run;
 use Codeception\TestRail\Entities\Suite;
 use Codeception\TestRail\Entities\TestCase;
